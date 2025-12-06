@@ -3,7 +3,11 @@ package com.pranay.journalApplication.Service;
 import com.pranay.journalApplication.Entity.User;
 import com.pranay.journalApplication.Repository.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
 import java.util.List;
 
 @Component
@@ -12,7 +16,11 @@ public class UserService {
     @Autowired
     private UserRepo userRepo;
 
-    public void saveEntry(User user){
+    private static final PasswordEncoder encoder = new BCryptPasswordEncoder();
+
+    public void saveNewUser(User user){
+        user.setPassword(encoder.encode(user.getPassword()));
+        user.setRoles(Arrays.asList("USER"));
         userRepo.save(user);
     }
 
@@ -24,8 +32,8 @@ public class UserService {
         return userRepo.findByUserName(username);
     }
 
-//    public void deleteUserById(ObjectId myId){
-//        userRepo.deleteById(myId);
-//    }
+    public void deleteUserById(String username){
+        userRepo.deleteByUserName(username);
+    }
 
 }
