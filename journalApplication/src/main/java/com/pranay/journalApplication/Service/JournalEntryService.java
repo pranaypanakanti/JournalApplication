@@ -26,7 +26,7 @@ public class JournalEntryService {
         journalEntry.setDate(LocalDateTime.now());
         JournalEntry save = journalEntryRepo.save(journalEntry);
         user.getJournalList().add(save);
-        userService.saveNewUser(user);
+        userService.saveUser(user);
     }
 
     public void saveEntry(JournalEntry journalEntry){
@@ -43,8 +43,9 @@ public class JournalEntryService {
 
     public void deleteJournalEntryById(ObjectId myId, String username){
         User user = userService.findByUserName(username);
+        boolean removed = false;
         user.getJournalList().removeIf(x -> x.getId().equals(myId));
-        userService.saveNewUser(user);
+        userService.saveUser(user);
         journalEntryRepo.deleteById(myId);
     }
 
