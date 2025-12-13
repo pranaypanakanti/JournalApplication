@@ -13,7 +13,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.ArrayList;
 import java.util.List;
 
-@Document(collation = "user")
+@Document
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -27,7 +27,7 @@ public class User {
     @NonNull
     private String password;
     private String email;
-    private boolean summery;
+    private boolean summary;
     @DBRef
     private List<JournalEntry> journalList = new ArrayList<>();
     private List<String> roles;
