@@ -1,175 +1,395 @@
-# JournalApplication
+<div align="center">
 
-A Spring Boot backend for a journal application with full CRUD for users and journals, MongoDB persistence, secure authentication/authorization (JWT + role-based), password encryption, automated email sending (verification / notifications), and other production-ready features.
+# 📓 JournalApplication — Secure Personal Journaling REST API
 
----
+**A full-featured backend journaling platform with role-based access, MongoDB transactions, and email notifications**
 
-## Table of contents
-- About
-- Key features
-- Tech stack
-- Architecture overview
-- Getting started (prerequisites & quick start)
-- Configuration (env / application properties)
-- Authentication & security
-- Email (automated mail sender)
-- Data model (brief)
-- Tests
-- Contact
+[![Java](https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.4.12-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
+[![Spring Security](https://img.shields.io/badge/Spring_Security-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white)](https://spring.io/projects/spring-security)
+[![Maven](https://img.shields.io/badge/Maven-C71A36?style=for-the-badge&logo=apachemaven&logoColor=white)](https://maven.apache.org/)
 
 ---
 
-## About
-JournalApplication is a backend service built with Spring Boot that provides a secure REST API for managing users and their journals. It uses MongoDB for data storage and implements secure authentication using encrypted credentials and JWT tokens. Role-based access control separates user and admin capabilities. The app can send automated emails (for account verification, password reset, and notifications).
+*A production-ready REST API that allows users to create, manage, and organize personal journal entries with robust authentication, role-based authorization, transactional data integrity, and integrated email capabilities.*
+
+</div>
 
 ---
 
-## Key features
-- CRUD operations for:
-  - Users (register, update profile, delete, role management)
-  - Journals (create, read, update, delete, list, search/pagination)
-- Authentication & Authorization:
-  - JWT-based stateless authentication
-  - Role-based access (ROLE_USER, ROLE_ADMIN)
-- Security:
-  - Password hashing (BCrypt recommended)
-  - Token expiration and validation
-- MongoDB integration (document store)
-- Automated email sending (SMTP) for account verification and notifications
-- Clean REST API suitable for consumption by web or mobile clients
+## 🎯 Problem Statement
+
+Personal journaling helps with self-reflection, mental clarity, and productivity tracking — but most solutions are either:
+
+- ❌ Insecure, with no proper authentication or authorization
+- ❌ Lacking multi-user support with isolated, private entries
+- ❌ Missing role-based access for administrative oversight
+- ❌ Not built for extensibility (email notifications, data exports, etc.)
+
+**JournalApplication** solves this by providing a **secure, multi-user REST API** where each user has their own private journal space, protected by Spring Security with BCrypt encryption, role-based access control (USER / ADMIN), MongoDB transactional integrity, and built-in email notification services.
 
 ---
 
-## Tech stack
-- Java (Spring Boot)
-- Spring Security (JWT)
-- Spring Data MongoDB
-- Spring Mail (JavaMailSender) or equivalent
-- Build: Maven
-- Database: MongoDB
+## ✨ Key Features
+
+| Feature | Description |
+|---|---|
+| 🔐 **HTTP Basic Authentication** | Secure authentication using Spring Security with BCrypt password hashing |
+| 👥 **Multi-User Support** | Each user has their own isolated journal space with private entries |
+| 📝 **Full CRUD for Journals** | Create, read, update, and delete journal entries linked to authenticated users |
+| 🛡️ **Role-Based Authorization** | `USER` and `ADMIN` roles with endpoint-level access control |
+| 🏛️ **Admin Dashboard** | Admins can view all users and create new admin accounts |
+| 📧 **Email Notifications** | Integrated SMTP email service using Spring Mail (Gmail SMTP) |
+| 🔗 **DBRef Relationships** | Journal entries linked to users via MongoDB `@DBRef` references |
+| 💾 **MongoDB Transactions** | Transactional operations ensuring data integrity across collections |
+| 🔍 **Custom Queries** | Advanced MongoDB queries using `MongoTemplate` with regex and criteria-based filtering |
+| 🛡️ **Public Registration** | Open user registration endpoint with secured authenticated routes |
 
 ---
 
-## Architecture overview
-- Controllers: REST endpoints for authentication, users, journals, and admin operations.
-- Services: Business logic for authentication, user and journal management, email sending.
-- Repositories: Spring Data MongoDB repositories for persistence.
-- Security: JWT filter, token provider, password encoder, and role-based access checks.
+## 🏗️ Tech Stack
+
+| Technology | Version | Purpose |
+|---|---|---|
+| **Java** | 21 | Core programming language |
+| **Spring Boot** | 3.4.12 | Application framework |
+| **Spring Security** | 6.x | Authentication & role-based authorization |
+| **Spring Data MongoDB** | — | MongoDB ODM & repository abstraction |
+| **MongoDB** | 6+ | NoSQL document database |
+| **Spring Mail** | — | SMTP email service integration |
+| **Lombok** | 1.18.42 | Boilerplate code reduction |
+| **BCrypt** | — | Password hashing & encoding |
+| **Maven** | 3.9+ | Build & dependency management |
 
 ---
 
-## Getting started
+## 📐 System Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     CLIENT (Postman / Frontend)                  │
+│                                                                 │
+│  ┌──────────────┐  ┌──────────────┐  ┌───────────────────────┐ │
+│  │  Public APIs  │  │ Journal APIs │  │     Admin APIs        │ │
+│  │  (No Auth)    │  │ (USER Auth)  │  │  (ADMIN Role Only)    │ │
+│  └──────────────┘  └──────────────┘  └───────────────────────┘ │
+└────────────────────────────┬────────────────────────────────────┘
+                             │  HTTP Basic Auth
+                             ▼
+┌─────────────────────────────────────────────────────────���───────┐
+│                  SERVER (Spring Boot 3.4.12)                    │
+│                                                                 │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │                    Security Layer                          │  │
+│  │  ┌──────────────────┐  ┌────────────────────────────────┐ │  │
+│  │  │ SecurityFilterChain │  │ CustomUserDetailsService     │ │  │
+│  │  │ • /api/public/** │  │ • Loads user from MongoDB      │ │  │
+│  │  │   → permitAll()  │  │ • Maps roles to authorities    │ │  │
+│  │  │ • /api/journal/**│  └────────────────────────────────┘ │  │
+│  │  │ • /api/user/**   │  ┌────────────────────────────────┐ │  │
+│  │  │   → authenticated│  │ BCryptPasswordEncoder          │ │  │
+│  │  │ • /api/admin/**  │  │ • Hashes passwords on signup   │ │  │
+│  │  │   → hasRole(ADMIN│  │ • Verifies on authentication   │ │  │
+│  │  └──────────────────┘  └────────────────────────────────┘ │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                 │
+│  ┌─────────────────┐  ┌──────────────────────────────────────┐  │
+│  │   Controllers    │  │            Services                  │  │
+│  │                  │  │                                      │  │
+│  │ • PublicCtrl     │→│  • UserService (CRUD + BCrypt)       │  │
+│  │ • JournalCtrl    │→│  • JournalEntryService (Transact.)  │  │
+│  │ • UserCtrl       │→│  • CustomUserDetailsService          │  │
+│  │ • AdminCtrl      │→│  • EmailService (SMTP)               │  │
+│  └─────────────────┘  └──────────────┬───────────────────────┘  │
+│                                       │                         │
+│  ┌────────────────────────────────────▼──────────────────────┐  │
+│  │                    Repositories                            │  │
+│  │  • JournalEntryRepo (MongoRepository)                     │  │
+│  │  • UserRepo (MongoRepository + custom query methods)      │  │
+│  │  • UserRepository (MongoTemplate + Criteria queries)      │  │
+│  └──────────────────────────┬────────────────────────────────┘  │
+└─────────────────────────────┼───────────────────────────────────┘
+                              │
+                              ▼
+                   ┌─────────────────────┐
+                   │      MongoDB        │
+                   │  ┌───────────────┐  │
+                   │  │  users        │  │
+                   │  │  journalEntry │  │
+                   │  └───────────────┘  │
+                   └─────────────────────┘
+```
+
+---
+
+## 🗄️ Data Model
+
+```
+┌──────────────────────────────┐          ┌──────────────────────────────┐
+│           User               │          │       JournalEntry           │
+├──────────────────────────────┤          ├──────────────────────────────┤
+│ _id        : ObjectId (PK)  │          │ _id      : ObjectId (PK)    │
+│ userName   : String (unique) │          │ name     : String (required)│
+│ password   : String (BCrypt) │          │ content  : String           │
+│ email      : String          │          │ date     : LocalDateTime    │
+│ summary    : boolean         │          └──────────────────────────────┘
+│ roles      : List<String>    │                     ▲
+│ journalList: List<@DBRef>  ──┼─────────────────────┘
+│              (JournalEntry)  │         @DBRef relationship
+└──────────────────────────────┘         (One User → Many Journals)
+```
+
+### Relationship Details
+
+| Aspect | Description |
+|---|---|
+| **User → JournalEntry** | One-to-Many via `@DBRef` — each user owns a list of journal entries |
+| **Password Storage** | BCrypt-encoded, never stored in plain text |
+| **Unique Constraint** | `userName` is indexed as unique (`@Indexed(unique = true)`) |
+| **Roles** | Stored as `List<String>` — supports `["USER"]` and `["USER", "ADMIN"]` |
+| **Transactions** | `MongoTransactionManager` enabled for atomic multi-collection operations |
+
+---
+
+## 🔌 API Endpoints
+
+### 🌐 Public (`/api/public`) — No Authentication Required
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/public/new-user` | Register a new user account |
+| `GET` | `/api/public/send-mail` | Trigger a test email notification |
+
+### 📝 Journal Entries (`/api/journal`) — 🔒 Authenticated (USER)
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/journal/get-all` | Get all journal entries (global) |
+| `GET` | `/api/journal/get-by-user` | Get authenticated user's journal entries |
+| `POST` | `/api/journal/new-entry` | Create a new journal entry for current user |
+| `PUT` | `/api/journal/update-journal/{id}` | Update a journal entry by ID |
+| `DELETE` | `/api/journal/delete-by-id/{id}` | Delete a journal entry by ID |
+
+### 👤 User Management (`/api/user`) — 🔒 Authenticated (USER)
+| Method | Endpoint | Description |
+|---|---|---|
+| `PUT` | `/api/user/update-user` | Update authenticated user's profile |
+| `DELETE` | `/api/user/delete-user` | Delete authenticated user's account |
+
+### 🛡️ Admin (`/api/admin`) — 🔒 Requires ADMIN Role
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/admin/get-all-users` | Get all registered users |
+| `POST` | `/api/admin/save-admin` | Create a new admin account |
+
+---
+
+## 🔐 Authentication & Authorization Flow
+
+```
+┌──────────┐                    ┌──────────────────┐           ┌───────────┐
+│  Client   │                    │   Spring Security │           │  MongoDB  │
+└────┬─────┘                    └────────┬─────────┘           └─────┬─────┘
+     │                                   │                           │
+     │  1. POST /api/public/new-user     │                           │
+     │  { userName, password, email }    │                           │
+     │──────────────────────────────────►│  BCrypt encode password   │
+     │                                   │──────────────────────────►│
+     │   201 CREATED                     │   Save user (role: USER)  │
+     │◄──────────────────────────────────│◄──────────────────────────│
+     │                                   │                           │
+     │  2. GET /api/journal/get-by-user  │                           │
+     │  Authorization: Basic base64(...) │                           │
+     │──────────────────────────────────►│                           │
+     │                                   │  loadUserByUsername()     │
+     │                                   │──────────────────────────►│
+     │                                   │◄──────────────────────────│
+     │                                   │  BCrypt.matches()         │
+     │                                   │  Check: role == USER ✅   │
+     │   200 OK [journal entries]        │                           │
+     │◄──────────────────────────────────│                           │
+     │                                   │                           │
+     │  3. GET /api/admin/get-all-users  │                           │
+     │  Authorization: Basic base64(...) │                           │
+     │──────────────────────────────────►│                           │
+     │                                   │  Check: role == ADMIN?    │
+     │   403 FORBIDDEN (if USER only)    │                           │
+     │◄──────────────────────────────────│                           │
+     │   200 OK (if ADMIN) ✅            │                           │
+     │◄──────────────────────────────────│                           │
+```
+
+### Security Rules Summary
+
+| Endpoint Pattern | Access Level | Auth Type |
+|---|---|---|
+| `/api/public/**` | Everyone | None |
+| `/api/journal/**` | Authenticated users | HTTP Basic |
+| `/api/user/**` | Authenticated users | HTTP Basic |
+| `/api/admin/**` | ADMIN role only | HTTP Basic |
+
+---
+
+## 📁 Project Structure
+
+```
+JournalApplication/
+├── journalApplication/                                    # Spring Boot Application
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/com/pranay/journalApplication/
+│   │   │   │   ├── JournalApplication.java                # Main entry + Transaction config
+│   │   │   │   │
+│   │   │   │   ├── Configuration/
+│   │   │   │   │   └── SecurityConfiguration.java         # Spring Security config
+│   │   │   │   │       • SecurityFilterChain (URL-based rules)
+│   │   │   │   │       • AuthenticationManager (BCrypt)
+│   │   │   │   │       • CSRF disabled for REST API
+│   │   │   │   │
+│   │   │   │   ├── Controller/
+│   │   │   │   │   ├── PublicController.java              # Open endpoints (register, email)
+│   │   │   │   │   ├── JournalEntryController.java        # CRUD for journal entries
+│   │   │   │   │   ├── UserController.java                # User profile management
+│   │   │   │   │   └── AdminController.java               # Admin-only operations
+│   │   │   │   │
+│   │   │   │   ├── Entity/
+│   │   │   │   │   ├── JournalEntry.java                  # Journal document (name, content, date)
+│   │   │   │   │   └── User.java                          # User document (credentials, roles, @DBRef)
+│   │   │   │   │
+│   │   │   │   ├── Repository/
+│   │   │   │   │   ├── JournalEntryRepo.java              # MongoRepository for journals
+│   │   │   │   │   ├── UserRepo.java                      # MongoRepository for users
+│   │   │   │   │   └── UserRepository.java                # Custom MongoTemplate queries
+│   │   │   │   │       • Regex email validation query
+│   │   │   │   │       • Criteria-based user filtering
+│   │   │   │   │
+│   │   │   │   └── Service/
+│   │   │   │       ├── JournalEntryService.java           # Journal CRUD + user linkage
+│   │   │   │       ├── UserService.java                   # User CRUD + BCrypt + role assignment
+│   │   │   │       ├── CustomUserDetailsService.java      # Spring Security UserDetailsService
+│   │   │   │       └── EmailService.java                  # SMTP email sender (JavaMailSender)
+│   │   │   │
+│   │   │   └── resources/
+│   │   │       ├── application.yml                        # MongoDB, Mail, Server config
+│   │   │       └── application.properties
+│   │   │
+│   │   └── test/java/                                     # Test directory
+│   │
+│   └── pom.xml                                            # Maven dependencies
+│
+└── README.md
+```
+
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
-- Java 17+ (or the version your project targets)
-- Maven
-- MongoDB (local or hosted)
-- SMTP account credentials for automated emails (Gmail, SendGrid, Mailgun, etc.)
-- Git
 
-### Quick start (local)
-1. Clone the repo:
-   git clone https://github.com/pranaypanakanti/JournalApplication.git
-   cd JournalApplication
+- **Java 21** (JDK)
+- **Maven 3.9+**
+- **MongoDB 6+** (running locally or via Atlas)
 
-2. Configure environment variables or application properties (see next section).
+### 1️⃣ Clone the Repository
 
-3. Build:
-   mvn clean package
+```bash
+git clone https://github.com/pranaypanakanti/JournalApplication.git
+cd JournalApplication/journalApplication
+```
 
-4. Run:
-   mvn spring-boot:run
-   or
-   java -jar target/<artifact-name>.jar
+### 2️⃣ Configure MongoDB & Email
 
-The server starts on the configured port (default commonly 8080).
+Edit `src/main/resources/application.yml`:
+
+```yaml
+spring:
+  application:
+    name: journalApplication
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: journaldb
+      auto-index-creation: true
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: your-email@gmail.com
+    password: your-app-password         # Use Gmail App Password, not your real password
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+```
+
+> ⚠️ **Important:** For Gmail SMTP, generate an [App Password](https://support.google.com/accounts/answer/185833) — do not use your Google account password.
+
+### 3️⃣ Start MongoDB
+
+```bash
+# If installed locally
+mongod
+
+# Or using Docker
+docker run -d -p 27017:27017 --name mongodb mongo:latest
+```
+
+### 4️⃣ Run the Application
+
+```bash
+./mvnw spring-boot:run
+```
+
+The API server will start at `http://localhost:8080`
+
+### 5️⃣ Test the API
+
+**Register a new user:**
+```bash
+curl -X POST http://localhost:8080/api/public/new-user \
+  -H "Content-Type: application/json" \
+  -d '{"userName": "john", "password": "secret123", "email": "john@example.com"}'
+```
+
+**Create a journal entry (authenticated):**
+```bash
+curl -X POST http://localhost:8080/api/journal/new-entry \
+  -u john:secret123 \
+  -H "Content-Type: application/json" \
+  -d '{"name": "My First Entry", "content": "Today was a productive day!"}'
+```
+
+**Get your journal entries:**
+```bash
+curl -X GET http://localhost:8080/api/journal/get-by-user \
+  -u john:secret123
+```
+
+## 👨‍💻 Author
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/pranaypanakanti">
+        <img src="https://avatars.githubusercontent.com/u/211188683?v=4" width="100px;" alt=""/>
+        <br />
+        <sub><b>Pranay Panakanti</b></sub>
+      </a>
+      <br />
+      <sub>Full Stack Developer</sub>
+    </td>
+  </tr>
+</table>
 
 ---
 
-## Configuration
+<div align="center">
 
-Provide configuration via environment variables or application.properties / application.yml.
+**⭐ If you found this project helpful, give it a star!**
 
-Common variables (example names — adapt to your property keys):
+*Built with ❤️ using Spring Boot & MongoDB*
 
-- spring.data.mongodb.uri or MONGODB_URI  
-  Example: mongodb://localhost:27017/journaldb
+[🐛 Report Bug](https://github.com/pranaypanakanti/JournalApplication/issues) · [💡 Request Feature](https://github.com/pranaypanakanti/JournalApplication/issues)
 
-- JWT_SECRET  
-  Example: a-very-secret-key-change-me
-
-- JWT_EXPIRATION_MS  
-  Example: 86400000  (24h in milliseconds)
-
-- spring.mail.host (MAIL_HOST)  
-- spring.mail.port (MAIL_PORT)  
-- spring.mail.username (MAIL_USERNAME)  
-- spring.mail.password (MAIL_PASSWORD)  
-- app.mail.from (MAIL_FROM)
-
-Example application.properties snippet:
-spring.data.mongodb.uri=${MONGODB_URI}
-server.port=8080
-
-jwt.secret=${JWT_SECRET}
-jwt.expiration-ms=${JWT_EXPIRATION_MS}
-
-spring.mail.host=${MAIL_HOST}
-spring.mail.port=${MAIL_PORT}
-spring.mail.username=${MAIL_USERNAME}
-spring.mail.password=${MAIL_PASSWORD}
-spring.mail.properties.mail.smtp.auth=true
-spring.mail.properties.mail.smtp.starttls.enable=true
-app.mail.from=${MAIL_FROM}
-
-Security notes:
-- Keep JWT_SECRET and MAIL_PASSWORD out of source control.
-- Use a secrets manager (Vault, AWS Secrets Manager, etc.) for production.
-
----
-
-## Authentication & security details
-- Passwords: hashed using a strong algorithm (BCrypt recommended).
-- JWT:
-  - Signed using JWT_SECRET.
-  - Contains user id and roles as claims.
-  - Enforces token expiration (JWT_EXPIRATION_MS).
-- Role based access control:
-  - ROLE_USER: permissions to manage own journals and profile.
-  - ROLE_ADMIN: elevated permissions for user management and moderation.
-- Always validate JWT signature and expiry for protected endpoints.
-- Use HTTPS in production; use secure cookie attributes if storing tokens in cookies.
-
----
-
-## Email (automated mail sender)
-- Uses Spring's JavaMailSender (or a service wrapper).
-- Typical flows:
-  - Account verification email after registration.
-  - Password reset emails.
-  - Notification emails (optional).
-- Send mail asynchronously (e.g., @Async or message queue) to avoid blocking requests.
-- Verify sending domain when using third-party providers (SendGrid, Mailgun, etc.).
-
----
-
-## Data model (brief)
-- User:
-  - id (ObjectId)
-  - name
-  - email (unique)
-  - password (hashed)
-  - roles (list)
-  - enabled / verified
-  - createdAt, updatedAt
-
-- Journal:
-  - id (ObjectId)
-  - title
-  - content
-  - authorId (reference to User)
-  - tags
-  - private (boolean)
-  - createdAt, updatedAt
-
-
+</div>
