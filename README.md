@@ -172,29 +172,4 @@ Security notes:
   - private (boolean)
   - createdAt, updatedAt
 
-Add indexes for frequently queried fields (authorId, createdAt, tags) to improve performance.
 
----
-
-## Tests
-- Run unit tests:
-  mvn test
-
-- Integration tests:
-  - Use a running MongoDB (or Testcontainers) for realistic integration tests.
-  - Mock JavaMailSender when testing email flows.
-
-Recommended tests:
-- Auth flows (register, login, token validation)
-- Role-based access restrictions
-- CRUD operations for users and journals
-- Email sending behavior (mocked)
-
-
----
-
-## Contact
-Repository: https://github.com/pranaypanakanti/JournalApplication  
-Maintainer: pranaypanakanti (https://github.com/pranaypanakanti)
-
----
