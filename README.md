@@ -190,10 +190,6 @@ Recommended tests:
 - CRUD operations for users and journals
 - Email sending behavior (mocked)
 
----
-
-## License
-If you want to make this project open source, add a LICENSE file (MIT, Apache 2.0, etc.). Currently no license file is included in this README — add one to define repository terms.
 
 ---
 
